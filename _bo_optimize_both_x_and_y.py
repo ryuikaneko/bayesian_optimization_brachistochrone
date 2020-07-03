@@ -21,19 +21,21 @@ def make_curve_cycloid():
     list_y = - 1.0 + np.cos(list_t)
     return list_x, list_y
 
-def make_curve_points(coeff):
-    len_c = len(coeff)
-    list_x = np.linspace(0.0,np.pi,len_c+2)
+def make_curve_points(coeffx,coeffy):
+    list_x = [0.0, np.pi]
+    list_x[1:1] = coeffx
+    list_x = np.array(list_x)
     list_y = [0.0, -2.0]
-    list_y[1:1] = coeff
+    list_y[1:1] = coeffy
     list_y = np.array(list_y)
     return list_x, list_y
 
-def make_curve_spline(coeff):
-    len_c = len(coeff)
-    list_x = np.linspace(0.0,np.pi,len_c+2)
+def make_curve_spline(coeffx,coeffy):
+    list_x = [0.0, np.pi]
+    list_x[1:1] = coeffx
+    list_x = np.array(list_x)
     list_y = [0.0, -2.0]
-    list_y[1:1] = coeff
+    list_y[1:1] = coeffy
     list_y = np.array(list_y)
     func_spline = interp1d(list_x,list_y,kind="cubic")
     N = 100001
@@ -52,13 +54,8 @@ def calc_time(list_x,list_y,g):
     time = np.sum(list_time)/np.sqrt(2.0*g)
     return time
 
-#def black_box_function(c0,c1,g):
-#    list_x, list_y = make_curve_spline([c0,c1])
-#    time = calc_time(list_x,list_y,g)
-#    return -time
-
-def black_box_function(c0,c1,c2,g):
-    list_x, list_y = make_curve_spline([c0,c1,c2])
+def black_box_function(c0x,c0y,c1x,c1y,g):
+    list_x, list_y = make_curve_spline([c0x,c1x],[c0y,c1y])
     time = calc_time(list_x,list_y,g)
     return -time
 
@@ -80,24 +77,27 @@ def main():
     plt.plot(list_x,list_y)
     fig.savefig("fig_curve_cycloid.png")
 
-#    coeff = [-1.25, -1.75]
+#    coeffx = [0.1*np.pi, 0.9*np.pi]
+#    coeffy = [-1.25, -1.75]
 #
-#    list_x, list_y = make_curve_points(coeff)
+#    list_x, list_y = make_curve_points(coeffx,coeffy)
 #    fig = plt.figure()
 #    plt.plot(list_x,list_y)
 #    fig.savefig("fig_curve_points.png")
 #
-#    list_x, list_y = make_curve_spline(coeff)
+#    list_x, list_y = make_curve_spline(coeffx,coeffy)
 #    time = calc_time(list_x,list_y,g)
 #    print("time(spline)",time)
 #    fig = plt.figure()
 #    plt.plot(list_x,list_y)
 #    fig.savefig("fig_curve_spline.png")
 
-    cmin = -2.0
-    cmax = -1e-6
-#    pbounds = {'c0':(cmin,cmax),'c1':(cmin,cmax),'g':(g,g)}
-    pbounds = {'c0':(cmin,cmax),'c1':(cmin,cmax),'c2':(cmin,cmax),'g':(g,g)}
+    ceps = 1e-6
+    cxmin = 0.0+ceps
+    cxmax = np.pi-ceps
+    cymin = -2.0+ceps
+    cymax = 0.0-ceps
+    pbounds = {'c0x':(cxmin,cxmax),'c0y':(cymin,cymax),'c1x':(cxmin,cxmax),'c1y':(cymin,cymax),'g':(g,g)}
     bo = BayesianOptimization(
         f=black_box_function,
         pbounds=pbounds,
@@ -109,21 +109,21 @@ def main():
 #    bo.maximize(n_iter=20,acq="poi",xi=1e-1)
     print(bo.max)
 
-#    c0s = [p['params']['c0'] for p in bo.res]
-#    c1s = [p['params']['c1'] for p in bo.res]
-#    print(c0s)
-#    print(c1s)
+#    c0xs = [p['params']['c0x'] for p in bo.res]
+#    print(c0xs)
 
-    c0max = bo.max['params']['c0']
-    c1max = bo.max['params']['c1']
-    c2max = bo.max['params']['c2']
-    print(c0max)
-    print(c1max)
-    print(c2max)
+    c0xmax = bo.max['params']['c0x']
+    c0ymax = bo.max['params']['c0y']
+    c1xmax = bo.max['params']['c1x']
+    c1ymax = bo.max['params']['c1y']
+    print(c0xmax)
+    print(c0ymax)
+    print(c1xmax)
+    print(c1ymax)
 
-#    coeff = [c0max,c1max]
-    coeff = [c0max,c1max,c2max]
-    list_x, list_y = make_curve_spline(coeff)
+    coeffx = [c0xmax,c1xmax]
+    coeffy = [c0ymax,c1ymax]
+    list_x, list_y = make_curve_spline(coeffx,coeffy)
     time = calc_time(list_x,list_y,g)
     print("time(opt_spline)",time)
     fig = plt.figure()
